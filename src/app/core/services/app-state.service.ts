@@ -39,7 +39,6 @@ export class AppStateService {
   // Drawers / Modals
   memberOpen = signal<Member | null>(null);
   eventOpen = signal<CalendarEvent | null>(null);
-  addMemberOpen = signal<boolean>(false);
   addEventOpen = signal<boolean>(false);
   addEventInitial = signal<{ date: Date; hour?: number } | null>(null);
   addNewsOpen = signal<boolean>(false);

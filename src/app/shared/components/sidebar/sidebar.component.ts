@@ -11,6 +11,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home' },
   { id: 'members', label: 'Mitglieder', icon: 'users' },
+  { id: 'invites', label: 'Einladungscodes', icon: 'key' },
   { id: 'teams', label: 'Teams', icon: 'ball' },
   { id: 'events', label: 'Trainings & Matches', icon: 'calendar' },
   { id: 'news', label: 'News & Berichte', icon: 'news' },

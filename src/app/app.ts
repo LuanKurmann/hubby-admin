@@ -13,7 +13,6 @@ import { ShortcutsOverlayComponent } from './shared/components/shortcuts-overlay
 import { ClubSwitcherComponent } from './shared/components/club-switcher/club-switcher.component';
 import { ProfileMenuComponent } from './shared/components/profile-menu/profile-menu.component';
 import { NotificationsDropdownComponent } from './shared/components/notifications-dropdown/notifications-dropdown.component';
-import { AddMemberModalComponent } from './shared/components/add-member-modal/add-member-modal.component';
 import { AddEventModalComponent } from './shared/components/add-event-modal/add-event-modal.component';
 import { SkeletonComponent } from './shared/components/skeleton/skeleton.component';
 import { TweaksPanelComponent } from './shared/components/tweaks-panel/tweaks-panel.component';
@@ -34,10 +33,12 @@ import { DuesComponent } from './pages/dues/dues.component';
 import { RolesComponent } from './pages/roles/roles.component';
 import { SettingsComponent } from './pages/settings/settings.component';
 import { ProfileComponent } from './pages/profile/profile.component';
+import { InvitesComponent } from './pages/invites/invites.component';
 
 const NAV_LABELS: Record<string, string> = {
   dashboard: 'Dashboard',
   members: 'Mitglieder',
+  invites: 'Einladungscodes',
   teams: 'Teams',
   events: 'Trainings & Matches',
   news: 'News & Berichte',
@@ -54,14 +55,14 @@ const NAV_LABELS: Record<string, string> = {
     SidebarComponent, TopbarComponent,
     ToastComponent, CommandPaletteComponent, ShortcutsOverlayComponent,
     ClubSwitcherComponent, ProfileMenuComponent, NotificationsDropdownComponent,
-    AddMemberModalComponent, AddEventModalComponent,
+    AddEventModalComponent,
     SkeletonComponent, TweaksPanelComponent,
     NewClubWizardComponent,
     AuthRouterComponent,
     DashboardComponent, MembersComponent, MemberDrawerComponent,
     TeamsComponent, EventsComponent, EventDrawerComponent,
     NewsComponent, DuesComponent, RolesComponent,
-    SettingsComponent, ProfileComponent,
+    SettingsComponent, ProfileComponent, InvitesComponent,
   ],
   template: `
     @if (!state.authenticated()) {
@@ -78,6 +79,7 @@ const NAV_LABELS: Record<string, string> = {
               @switch (state.page()) {
                 @case ('dashboard') { <app-dashboard /> }
                 @case ('members') { <app-members /> }
+                @case ('invites') { <app-invites /> }
                 @case ('teams') { <app-teams /> }
                 @case ('events') { <app-events /> }
                 @case ('news') { <app-news /> }
@@ -100,7 +102,6 @@ const NAV_LABELS: Record<string, string> = {
       <app-notifications-dropdown />
       <app-member-drawer />
       <app-event-drawer />
-      <app-add-member-modal />
       <app-add-event-modal />
 
       @if (tweaksOpen()) {
@@ -158,10 +159,9 @@ export class App {
       this.state.shortcutsOpen.set(true);
     } else if (e.key === 'n' || e.key === 'N') {
       const p = this.state.page();
-      if (p === 'members') this.state.addMemberOpen.set(true);
-      else if (p === 'events') this.state.addEventOpen.set(true);
+      if (p === 'events') this.state.addEventOpen.set(true);
       else if (p === 'news') this.toast.show('News erstellen');
-      else this.state.addMemberOpen.set(true);
+      else if (p === 'members' || p === 'invites') this.state.setPage('invites');
     }
   }
 }

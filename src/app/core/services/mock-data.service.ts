@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { Club, Team, Role, Member, CalendarEvent, NewsItem, ActivityItem } from '../models';
+import { Injectable, signal } from '@angular/core';
+import { Club, Team, Role, Member, CalendarEvent, NewsItem, ActivityItem, InviteCode } from '../models';
 
 const CH_FIRST_M = ['Luca','Noah','Leon','Liam','Elias','Nino','Jonas','Matteo','Fabio','Nico','Samuel','David','Tim','Lars','Jan','Silvan','Cedric','Livio','Kevin','Marco','Patrick','Michael','Stefan','Thomas','Andreas','Daniel','Roger','Urs','Hans','Beat','Reto','Bruno','Walter','Peter','Markus','Christian','Benjamin','Alessandro','Raphael','Simon','Dario','Gian','Flavio','Remo','Sandro','Pascal','Adrian','Roman','Yannick','Manuel','Kilian','Tobias','Oliver','Philipp','Florian'];
 const CH_FIRST_F = ['Lea','Mia','Lara','Lina','Elena','Anna','Sara','Laura','Lena','Nora','Julia','Sophia','Emma','Chiara','Alessia','Vanessa','Jana','Nadine','Fabienne','Ramona','Sabrina','Melanie','Nicole','Andrea','Corinne','Monika','Beatrice','Claudia','Barbara','Ursula'];
@@ -148,5 +148,89 @@ export class MockDataService {
 
   getMembersForTeam(teamId: string): Member[] {
     return this.members.filter(m => m.teams.includes(teamId));
+  }
+
+  readonly inviteCodes = signal<InviteCode[]>([
+    {
+      id: 'inv1',
+      code: 'FCS-2026-A4XK',
+      roleId: 'r5',
+      teamId: null,
+      maxUses: 20,
+      usedCount: 12,
+      expiresAt: dateOffset(30, 23, 59),
+      note: 'Generelle Mitgliederwerbung 2026',
+      createdAt: dateOffset(-20, 10, 0),
+      createdBy: 'Markus Gerber',
+      status: 'active',
+    },
+    {
+      id: 'inv2',
+      code: 'FCS-U15-BJM9',
+      roleId: 'r5',
+      teamId: 't5',
+      maxUses: 5,
+      usedCount: 3,
+      expiresAt: dateOffset(60, 23, 59),
+      note: 'Neue U15-Spieler Frühjahr',
+      createdAt: dateOffset(-10, 14, 20),
+      createdBy: 'Kilian Graf',
+      status: 'active',
+    },
+    {
+      id: 'inv3',
+      code: 'FCS-COACH-XY72',
+      roleId: 'r4',
+      teamId: null,
+      maxUses: 3,
+      usedCount: 0,
+      expiresAt: null,
+      note: 'Neue Trainer',
+      createdAt: dateOffset(-5, 9, 0),
+      createdBy: 'Markus Gerber',
+      status: 'active',
+    },
+    {
+      id: 'inv4',
+      code: 'FCS-VERSAMM-2F',
+      roleId: 'r6',
+      teamId: null,
+      maxUses: null,
+      usedCount: 8,
+      expiresAt: dateOffset(-2, 20, 0),
+      note: 'GV-Teilnehmer',
+      createdAt: dateOffset(-60, 11, 0),
+      createdBy: 'Aktuar',
+      status: 'active',
+    },
+    {
+      id: 'inv5',
+      code: 'FCS-ALT-9X3M',
+      roleId: 'r5',
+      teamId: null,
+      maxUses: 10,
+      usedCount: 10,
+      expiresAt: null,
+      note: 'Altes Onboarding',
+      createdAt: dateOffset(-90, 15, 0),
+      createdBy: 'Markus Gerber',
+      status: 'revoked',
+    },
+  ]);
+
+  addInviteCode(c: InviteCode): void {
+    this.inviteCodes.update(list => [c, ...list]);
+  }
+
+  updateInviteCode(id: string, patch: Partial<InviteCode>): void {
+    this.inviteCodes.update(list => list.map(c => c.id === id ? { ...c, ...patch } : c));
+  }
+
+  removeInviteCode(id: string): void {
+    this.inviteCodes.update(list => list.filter(c => c.id !== id));
+  }
+
+  findInviteCode(code: string): InviteCode | undefined {
+    return this.inviteCodes().find(c => c.code.toLowerCase() === code.toLowerCase() && c.status === 'active');
   }
 }

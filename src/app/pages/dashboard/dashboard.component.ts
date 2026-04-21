@@ -271,8 +271,8 @@ export class EventCardComponent {
           <button class="btn" (click)="addNews()">
             <app-icon name="plus" [size]="13" /> News
           </button>
-          <button class="btn btn-primary" (click)="addMember()">
-            <app-icon name="userPlus" [size]="13" /> Mitglied einladen
+          <button class="btn btn-primary" (click)="state.setPage('invites')">
+            <app-icon name="key" [size]="13" /> Einladungscode
           </button>
         </div>
       </div>
@@ -906,10 +906,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   addNews(): void {
     this.state.addNewsOpen.set(true);
-  }
-
-  addMember(): void {
-    this.state.addMemberOpen.set(true);
   }
 
   goEvents(): void {

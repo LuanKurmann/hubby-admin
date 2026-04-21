@@ -91,3 +91,17 @@ export interface Tweaks {
   density: 'compact' | 'comfortable' | 'spacious';
   primaryColor: string;
 }
+
+export interface InviteCode {
+  id: string;
+  code: string;
+  roleId: string;
+  teamId: string | null;
+  maxUses: number | null;
+  usedCount: number;
+  expiresAt: Date | null;
+  note: string;
+  createdAt: Date;
+  createdBy: string;
+  status: 'active' | 'revoked';
+}

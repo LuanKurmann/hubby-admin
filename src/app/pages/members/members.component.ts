@@ -35,8 +35,8 @@ import { MemberDrawerComponent } from './member-drawer.component';
           <button class="btn" (click)="exportCsv()">
             <app-icon name="download" [size]="13" /> Exportieren
           </button>
-          <button class="btn btn-primary" (click)="state.addMemberOpen.set(true)">
-            <app-icon name="userPlus" [size]="13" /> Mitglied einladen
+          <button class="btn btn-primary" (click)="state.setPage('invites')">
+            <app-icon name="key" [size]="13" /> Einladungscodes
           </button>
         </div>
       </div>
@@ -171,9 +171,9 @@ import { MemberDrawerComponent } from './member-drawer.component';
             <app-empty-state
               emoji="👥"
               title="Keine Mitglieder gefunden"
-              body="Passe die Filter an oder lade jemanden ein.">
-              <button class="btn btn-primary" (click)="state.addMemberOpen.set(true)">
-                <app-icon name="userPlus" [size]="13" /> Mitglied einladen
+              body="Passe die Filter an oder erstelle einen Einladungscode.">
+              <button class="btn btn-primary" (click)="state.setPage('invites')">
+                <app-icon name="key" [size]="13" /> Einladungscode erstellen
               </button>
             </app-empty-state>
           }

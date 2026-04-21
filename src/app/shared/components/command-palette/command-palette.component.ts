@@ -102,7 +102,7 @@ export class CommandPaletteComponent {
       action: () => this.state.setPage('events'),
     }));
     const actions: Result[] = [
-      { kind: 'action', icon: 'plus', label: 'Neues Mitglied einladen', sub: 'Aktion', action: () => this.state.setPage('members') },
+      { kind: 'action', icon: 'key', label: 'Einladungscode erstellen', sub: 'Aktion', action: () => this.state.setPage('invites') },
       { kind: 'action', icon: 'plus', label: 'Neues Event erstellen', sub: 'Aktion', action: () => this.state.setPage('events') },
       { kind: 'action', icon: 'plus', label: 'News publizieren', sub: 'Aktion', action: () => this.state.setPage('news') },
     ];
