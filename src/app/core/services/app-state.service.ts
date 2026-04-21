@@ -34,6 +34,7 @@ export class AppStateService {
   clubSwitcherOpen = signal<boolean>(false);
   profileMenuAnchor = signal<string | null>(null);
   notifOpen = signal<boolean>(false);
+  newClubWizardOpen = signal<boolean>(false);
 
   // Drawers / Modals
   memberOpen = signal<Member | null>(null);

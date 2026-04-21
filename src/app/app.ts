@@ -17,6 +17,7 @@ import { AddMemberModalComponent } from './shared/components/add-member-modal/ad
 import { AddEventModalComponent } from './shared/components/add-event-modal/add-event-modal.component';
 import { SkeletonComponent } from './shared/components/skeleton/skeleton.component';
 import { TweaksPanelComponent } from './shared/components/tweaks-panel/tweaks-panel.component';
+import { NewClubWizardComponent } from './shared/components/new-club-wizard/new-club-wizard.component';
 
 // Auth
 import { AuthRouterComponent } from './pages/auth/auth-router.component';
@@ -55,6 +56,7 @@ const NAV_LABELS: Record<string, string> = {
     ClubSwitcherComponent, ProfileMenuComponent, NotificationsDropdownComponent,
     AddMemberModalComponent, AddEventModalComponent,
     SkeletonComponent, TweaksPanelComponent,
+    NewClubWizardComponent,
     AuthRouterComponent,
     DashboardComponent, MembersComponent, MemberDrawerComponent,
     TeamsComponent, EventsComponent, EventDrawerComponent,
@@ -103,6 +105,10 @@ const NAV_LABELS: Record<string, string> = {
 
       @if (tweaksOpen()) {
         <app-tweaks-panel (close)="tweaksOpen.set(false)" />
+      }
+
+      @if (state.newClubWizardOpen()) {
+        <app-new-club-wizard [inAuthFlow]="false" />
       }
     }
 

@@ -49,6 +49,6 @@ export class ClubSwitcherComponent {
 
   newClub(): void {
     this.close();
-    this.state.authView.set('create');
+    this.state.newClubWizardOpen.set(true);
   }
 }
