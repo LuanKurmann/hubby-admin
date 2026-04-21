@@ -22,13 +22,13 @@ import { MemberDrawerComponent } from './member-drawer.component';
     MemberDrawerComponent,
   ],
   template: `
-    <div style="padding:24px;display:flex;flex-direction:column;gap:16px;height:calc(100vh - var(--topbar-h))">
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px;height:calc(100vh - var(--topbar-h))">
       <!-- Page header -->
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
         <div>
           <h1 style="font-size:22px;font-weight:600;letter-spacing:-0.02em;margin:0">Mitglieder</h1>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:4px">
-            {{ activeCount() }} aktive Mitglieder · {{ unpaidCount() }} mit offenem Beitrag
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">
+            {{ activeCount() }} aktive Mitglieder · {{ unpaidCount() }} mit offenem Beitrag · {{ filtered().length }} von {{ data.members.length }} angezeigt
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
@@ -42,10 +42,10 @@ import { MemberDrawerComponent } from './member-drawer.component';
       </div>
 
       <!-- Filter bar -->
-      <div class="card" style="padding:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <div style="position:relative;flex:1;min-width:220px;max-width:340px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="position:relative;flex:1;min-width:200px">
           <app-icon name="search" [size]="14"
-            style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted)" />
+            style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none" />
           <input
             class="input"
             placeholder="Name, E-Mail oder Telefon …"
@@ -53,32 +53,28 @@ import { MemberDrawerComponent } from './member-drawer.component';
             (ngModelChange)="q.set($event)"
             style="padding-left:30px">
         </div>
-        <select class="select" [ngModel]="teamFilter()" (ngModelChange)="teamFilter.set($event)" style="max-width:180px">
+        <select class="select" [ngModel]="teamFilter()" (ngModelChange)="teamFilter.set($event)" style="width:160px;flex-shrink:0">
           <option value="">Alle Teams</option>
           @for (t of data.teams; track t.id) {
             <option [value]="t.id">{{ t.name }}</option>
           }
         </select>
-        <select class="select" [ngModel]="roleFilter()" (ngModelChange)="roleFilter.set($event)" style="max-width:180px">
+        <select class="select" [ngModel]="roleFilter()" (ngModelChange)="roleFilter.set($event)" style="width:160px;flex-shrink:0">
           <option value="">Alle Rollen</option>
           @for (r of data.roles; track r.id) {
             <option [value]="r.id">{{ r.name }}</option>
           }
         </select>
-        <select class="select" [ngModel]="payFilter()" (ngModelChange)="payFilter.set($event)" style="max-width:160px">
+        <select class="select" [ngModel]="payFilter()" (ngModelChange)="payFilter.set($event)" style="width:140px;flex-shrink:0">
           <option value="">Alle Beiträge</option>
           <option value="paid">Bezahlt</option>
           <option value="open">Offen</option>
         </select>
         @if (hasFilters()) {
-          <button class="btn btn-ghost btn-sm" (click)="resetFilters()">
+          <button class="btn btn-ghost btn-sm" (click)="resetFilters()" style="flex-shrink:0">
             <app-icon name="x" [size]="12" /> Zurücksetzen
           </button>
         }
-        <div style="flex:1"></div>
-        <div style="font-size:12px;color:var(--text-muted)">
-          {{ filtered().length }} von {{ data.members.length }}
-        </div>
       </div>
 
       <!-- Bulk actions bar -->

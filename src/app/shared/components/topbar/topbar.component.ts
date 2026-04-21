@@ -8,7 +8,15 @@ import { AvatarComponent } from '../avatar/avatar.component';
   standalone: true,
   imports: [IconComponent, AvatarComponent],
   template: `
-    <header style="height:var(--topbar-h);display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid var(--border);background:var(--bg-elev);position:sticky;top:0;z-index:20">
+    <header style="height:var(--topbar-h);display:flex;align-items:center;gap:12px;padding:0 16px 0 10px;border-bottom:1px solid var(--border);background:var(--bg-elev);position:sticky;top:0;z-index:20">
+      <!-- Sidebar toggle -->
+      <button (click)="state.collapsed.update(v => !v)"
+        [title]="state.collapsed() ? 'Seitenleiste ausklappen' : 'Seitenleiste einklappen'"
+        class="btn btn-ghost btn-icon"
+        style="flex-shrink:0">
+        <app-icon [name]="state.collapsed() ? 'menu' : 'menuCollapse'" [size]="16" />
+      </button>
+
       <div style="font-size:14px;font-weight:600">{{ title() }}</div>
       <div style="flex:1"></div>
 

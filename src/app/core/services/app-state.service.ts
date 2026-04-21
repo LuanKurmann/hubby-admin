@@ -59,8 +59,31 @@ export class AppStateService {
       document.documentElement.setAttribute('data-theme', t.theme);
       document.documentElement.setAttribute('data-density', t.density);
       document.documentElement.style.setProperty('--primary', t.primaryColor);
-      document.documentElement.style.setProperty('--primary-hover', t.primaryColor);
+      document.documentElement.style.setProperty('--primary-hover', this.darken(t.primaryColor, 0.12));
+      document.documentElement.style.setProperty('--primary-subtle', this.toRgba(t.primaryColor, t.theme === 'dark' ? 0.14 : 0.08));
+      document.documentElement.style.setProperty('--primary-subtle-border', this.toRgba(t.primaryColor, 0.3));
     });
+  }
+
+  private hexToRgb(hex: string): { r: number; g: number; b: number } {
+    const h = hex.replace('#', '');
+    const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    return {
+      r: parseInt(full.slice(0, 2), 16),
+      g: parseInt(full.slice(2, 4), 16),
+      b: parseInt(full.slice(4, 6), 16),
+    };
+  }
+
+  private toRgba(hex: string, alpha: number): string {
+    const { r, g, b } = this.hexToRgb(hex);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  private darken(hex: string, amount: number): string {
+    const { r, g, b } = this.hexToRgb(hex);
+    const f = (v: number) => Math.max(0, Math.round(v * (1 - amount)));
+    return `rgb(${f(r)}, ${f(g)}, ${f(b)})`;
   }
 
   setPage(p: string): void {

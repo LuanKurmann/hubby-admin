@@ -113,13 +113,7 @@ export class ProfileMenuComponent {
     { k: 'dark' as const, l: '🌙' },
   ];
 
-  positionStyle = computed(() => {
-    const anchor = this.state.profileMenuAnchor();
-    if (anchor === 'topbar') {
-      return 'position:fixed;top:52px;right:16px;width:260px';
-    }
-    return 'position:fixed;bottom:70px;left:12px;width:240px';
-  });
+  positionStyle = computed(() => 'position:fixed;top:52px;right:16px;width:260px');
 
   constructor() {
     effect((onCleanup) => {
