@@ -1,6 +1,8 @@
 import { Component, inject, computed, effect, ElementRef, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { OnboardingService } from '../../../core/services/onboarding.service';
 import { IconComponent } from '../icon/icon.component';
 import { AvatarComponent } from '../avatar/avatar.component';
 
@@ -62,6 +64,12 @@ import { AvatarComponent } from '../avatar/avatar.component';
 
           <div class="divider" style="margin:4px 6px"></div>
 
+          <button class="pm-item" (click)="startTour()"
+            (mouseenter)="hoverBg($event, 'var(--bg-subtle)')"
+            (mouseleave)="hoverBg($event, 'transparent')">
+            <app-icon name="sparkles" [size]="14" style="color:var(--text-muted)" />
+            <span style="flex:1">Tour erneut starten</span>
+          </button>
           <button class="pm-item" (click)="close(); toast.show('Support-Zentrum')"
             (mouseenter)="hoverBg($event, 'var(--bg-subtle)')"
             (mouseleave)="hoverBg($event, 'transparent')">
@@ -105,6 +113,8 @@ import { AvatarComponent } from '../avatar/avatar.component';
 export class ProfileMenuComponent {
   state = inject(AppStateService);
   toast = inject(ToastService);
+  router = inject(Router);
+  onboarding = inject(OnboardingService);
 
   menu = viewChild<ElementRef<HTMLDivElement>>('menu');
 
@@ -145,7 +155,7 @@ export class ProfileMenuComponent {
   close(): void { this.state.profileMenuAnchor.set(null); }
 
   goto(page: string): void {
-    this.state.setPage(page);
+    this.router.navigate(['/' + page]);
     this.close();
   }
 
@@ -154,11 +164,20 @@ export class ProfileMenuComponent {
     this.state.authView.set('login');
     this.toast.show({ kind: 'success', body: 'Erfolgreich abgemeldet' });
     this.close();
+    this.router.navigateByUrl('/');
   }
 
   openShortcuts(): void {
     this.state.shortcutsOpen.set(true);
     this.close();
+  }
+
+  startTour(): void {
+    this.close();
+    // Ensure we're on the dashboard
+    this.router.navigateByUrl('/dashboard').then(() => {
+      setTimeout(() => this.onboarding.start(this.state.club().name), 200);
+    });
   }
 
   hoverBg(e: Event, bg: string): void {

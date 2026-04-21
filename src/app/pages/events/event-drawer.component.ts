@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../core/services/app-state.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -15,7 +16,7 @@ import { CalendarEvent, Member } from '../../core/models';
   standalone: true,
   imports: [FormsModule, DrawerComponent, ModalComponent, IconComponent, AvatarComponent, FormatDatePipe],
   template: `
-    <app-drawer [open]="!!state.eventOpen()" [width]="720" (closed)="state.closeEvent()">
+    <app-drawer [open]="!!state.eventOpen()" [width]="720" (closed)="closeDrawer()">
       @if (state.eventOpen(); as event) {
         <!-- Header -->
         <div style="padding:20px;border-bottom:1px solid var(--border)">
@@ -35,7 +36,7 @@ import { CalendarEvent, Member } from '../../core/models';
                 }
               </div>
             </div>
-            <button class="btn btn-ghost btn-icon" type="button" (click)="state.closeEvent()">
+            <button class="btn btn-ghost btn-icon" type="button" (click)="closeDrawer()">
               <app-icon name="x" [size]="16" />
             </button>
           </div>
@@ -215,6 +216,12 @@ export class EventDrawerComponent {
   state = inject(AppStateService);
   data = inject(MockDataService);
   toast = inject(ToastService);
+  router = inject(Router);
+
+  closeDrawer(): void {
+    this.state.closeEvent();
+    this.router.navigate([], { queryParams: { open: null }, queryParamsHandling: 'merge' });
+  }
 
   matchReportOpen = signal<boolean>(false);
   homeScore = 0;
@@ -303,6 +310,6 @@ export class EventDrawerComponent {
 
   deleteEvent(): void {
     this.toast.show({ kind: 'warning', body: 'Event gelöscht.' });
-    this.state.closeEvent();
+    this.closeDrawer();
   }
 }

@@ -1,6 +1,8 @@
 import { Component, inject, signal, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../../core/services/app-state.service';
+import { OnboardingService } from '../../../core/services/onboarding.service';
 import { MockDataService } from '../../../core/services/mock-data.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { IconComponent } from '../icon/icon.component';
@@ -667,6 +669,8 @@ export class NewClubWizardComponent {
   state = inject(AppStateService);
   data = inject(MockDataService);
   toast = inject(ToastService);
+  router = inject(Router);
+  onboarding = inject(OnboardingService);
 
   inAuthFlow = input<boolean>(false);
   closed = output<void>();
@@ -809,6 +813,10 @@ export class NewClubWizardComponent {
     }
     this.state.newClubWizardOpen.set(false);
     this.closed.emit();
+    this.router.navigateByUrl('/dashboard').then(() => {
+      // Start onboarding tour ~600ms after nav, so DOM is ready
+      setTimeout(() => this.onboarding.start(this.form.name || 'deinem neuen Verein'), 600);
+    });
   }
 
   onClose(): void {

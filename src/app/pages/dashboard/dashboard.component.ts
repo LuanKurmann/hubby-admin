@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../core/services/app-state.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
@@ -271,7 +272,7 @@ export class EventCardComponent {
           <button class="btn" (click)="addNews()">
             <app-icon name="plus" [size]="13" /> News
           </button>
-          <button class="btn btn-primary" (click)="state.setPage('invites')">
+          <button class="btn btn-primary" (click)="router.navigate(['/invites'])">
             <app-icon name="key" [size]="13" /> Einladungscode
           </button>
         </div>
@@ -795,6 +796,7 @@ export class EventCardComponent {
 export class DashboardComponent implements OnInit, OnDestroy {
   state = inject(AppStateService);
   mock = inject(MockDataService);
+  router = inject(Router);
 
   private tickId: number | null = null;
 
@@ -909,10 +911,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   goEvents(): void {
-    this.state.setPage('events');
+    this.router.navigate(['/events']);
   }
 
   goDues(): void {
-    this.state.setPage('dues');
+    this.router.navigate(['/dues']);
   }
 }

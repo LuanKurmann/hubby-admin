@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AppStateService } from '../../core/services/app-state.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
@@ -188,7 +189,7 @@ interface DayGroup {
                   @for (e of g.events; track e.id) {
                     <button
                       type="button"
-                      (click)="state.openEvent(e)"
+                      (click)="router.navigate([], { queryParams: { open: e.id }, queryParamsHandling: 'merge' })"
                       style="display:flex;align-items:center;gap:14px;width:100%;padding:10px 12px;border-radius:6px;text-align:left;background:transparent;border:0;cursor:pointer">
                       <span [style.background]="typeColor(e.type)" style="width:10px;height:10px;border-radius:50%;flex-shrink:0"></span>
                       <div style="font-size:13px;font-variant-numeric:tabular-nums;color:var(--text-muted);width:50px">{{ e.start | formatDate:'time' }}</div>
@@ -231,6 +232,20 @@ interface DayGroup {
 export class EventsComponent {
   state = inject(AppStateService);
   data = inject(MockDataService);
+  router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
+
+  constructor() {
+    this.activatedRoute.queryParamMap.subscribe(qp => {
+      const id = qp.get('open');
+      if (id) {
+        const e = this.data.events.find(x => x.id === id);
+        if (e) this.state.openEvent(e);
+      } else if (this.state.eventOpen()) {
+        this.state.closeEvent();
+      }
+    });
+  }
 
   view = signal<ViewMode>('month');
   refDate = signal<Date>((() => { const d = new Date(); d.setDate(1); return d; })());
@@ -373,6 +388,6 @@ export class EventsComponent {
 
   openEvent(ev: Event, e: CalendarEvent): void {
     ev.stopPropagation();
-    this.state.openEvent(e);
+    this.router.navigate([], { queryParams: { open: e.id }, queryParamsHandling: 'merge' });
   }
 }

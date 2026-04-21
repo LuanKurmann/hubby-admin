@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../core/services/app-state.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -122,7 +123,7 @@ interface TeamRole {
               <div class="card">
                 <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
                   <div style="font-size:13px;font-weight:600">Meine Teams &amp; Rollen</div>
-                  <button class="btn btn-ghost btn-sm" (click)="app.setPage('teams')">
+                  <button class="btn btn-ghost btn-sm" (click)="router.navigate(['/teams'])">
                     Alle Teams <app-icon name="chevronRight" [size]="12" />
                   </button>
                 </div>
@@ -170,7 +171,7 @@ interface TeamRole {
                   <button class="btn" style="justify-content:flex-start" (click)="exportData()">
                     <app-icon name="download" [size]="13" /> Meine Daten exportieren
                   </button>
-                  <button class="btn" style="justify-content:flex-start" (click)="app.setPage('settings')">
+                  <button class="btn" style="justify-content:flex-start" (click)="router.navigate(['/settings'])">
                     <app-icon name="settings" [size]="13" /> Vereinseinstellungen
                   </button>
                   <button class="btn" style="justify-content:flex-start" (click)="openHelp()">
@@ -360,6 +361,7 @@ interface TeamRole {
 })
 export class ProfileComponent {
   app = inject(AppStateService);
+  router = inject(Router);
   private mock = inject(MockDataService);
   private toast = inject(ToastService);
 

@@ -18,7 +18,6 @@ const DEFAULT_TWEAKS: Tweaks = { theme: 'dark', density: 'compact', primaryColor
 export class AppStateService {
   // Persistence
   authenticated = signal<boolean>(loadLS('hubby-auth', false));
-  page = signal<string>(loadLS('hubby-page', 'dashboard'));
   collapsed = signal<boolean>(loadLS('hubby-sb', false));
   club = signal<Club>(loadLS('hubby-club', { id: 'c1', name: 'FC Seedorf', logo: 'FCS', color: '#DC2626', members: 168, role: 'Präsident' }));
   tweaks = signal<Tweaks>(loadLS('hubby-tweaks', DEFAULT_TWEAKS));
@@ -26,7 +25,6 @@ export class AppStateService {
   // Session
   user = signal<User>({ name: 'Markus Gerber', email: 'markus@fc-seedorf.ch' });
   authView = signal<string>('login');
-  loading = signal<boolean>(false);
 
   // Overlays
   cmdOpen = signal<boolean>(false);
@@ -35,6 +33,7 @@ export class AppStateService {
   profileMenuAnchor = signal<string | null>(null);
   notifOpen = signal<boolean>(false);
   newClubWizardOpen = signal<boolean>(false);
+  mobileSidebarOpen = signal<boolean>(false);
 
   // Drawers / Modals
   memberOpen = signal<Member | null>(null);
@@ -48,7 +47,6 @@ export class AppStateService {
   constructor() {
     // Persist signals
     effect(() => saveLS('hubby-auth', this.authenticated()));
-    effect(() => saveLS('hubby-page', this.page()));
     effect(() => saveLS('hubby-sb', this.collapsed()));
     effect(() => saveLS('hubby-club', this.club()));
     effect(() => saveLS('hubby-tweaks', this.tweaks()));
@@ -84,12 +82,6 @@ export class AppStateService {
     const { r, g, b } = this.hexToRgb(hex);
     const f = (v: number) => Math.max(0, Math.round(v * (1 - amount)));
     return `rgb(${f(r)}, ${f(g)}, ${f(b)})`;
-  }
-
-  setPage(p: string): void {
-    this.loading.set(true);
-    this.page.set(p);
-    setTimeout(() => this.loading.set(false), 280);
   }
 
   setTweak<K extends keyof Tweaks>(key: K, value: Tweaks[K]): void {

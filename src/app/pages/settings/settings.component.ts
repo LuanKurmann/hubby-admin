@@ -4,6 +4,8 @@ import { AppStateService } from '../../core/services/app-state.service';
 import { ToastService } from '../../core/services/toast.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { I18nService, Locale } from '../../core/i18n/i18n.service';
+import { TPipe } from '../../shared/pipes/t.pipe';
 
 type SettingsSection = 'profile' | 'branding' | 'members' | 'notifications' | 'danger';
 
@@ -37,7 +39,7 @@ interface Notifications {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [FormsModule, IconComponent, ConfirmDialogComponent],
+  imports: [FormsModule, IconComponent, ConfirmDialogComponent, TPipe],
   template: `
     <div style="padding:24px;display:flex;flex-direction:column;gap:16px;height:calc(100vh - var(--topbar-h))">
       <!-- Page header -->
@@ -100,8 +102,8 @@ interface Notifications {
                   <div><label class="label">Webseite</label><input class="input" [(ngModel)]="profile().web" name="web" (ngModelChange)="updateProfile('web', $event)" /></div>
 
                   <div>
-                    <label class="label">Sprache</label>
-                    <select class="select" [(ngModel)]="profile().language" name="language" (ngModelChange)="updateProfile('language', $event)">
+                    <label class="label">{{ 'settings.language.title' | t }}</label>
+                    <select class="select" [ngModel]="i18n.locale().toUpperCase()" name="language" (ngModelChange)="onLanguageChange($event)">
                       <option value="DE">Deutsch</option>
                       <option value="FR">Français</option>
                       <option value="IT">Italiano</option>
@@ -314,7 +316,13 @@ interface Notifications {
 })
 export class SettingsComponent {
   app = inject(AppStateService);
+  i18n = inject(I18nService);
   private toast = inject(ToastService);
+
+  onLanguageChange(v: 'DE' | 'FR' | 'IT'): void {
+    this.i18n.setLocale(v.toLowerCase() as Locale);
+    this.updateProfile('language', v);
+  }
 
   readonly sections: Array<{ k: SettingsSection; l: string; icon: string }> = [
     { k: 'profile', l: 'Vereinsprofil', icon: 'building' },

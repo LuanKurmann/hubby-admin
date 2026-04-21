@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../core/services/app-state.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -303,6 +304,7 @@ export class MemberDrawerComponent {
   state = inject(AppStateService);
   data = inject(MockDataService);
   toast = inject(ToastService);
+  router = inject(Router);
 
   tab = signal<TabId>('profil');
   confirmDelete = signal<boolean>(false);
@@ -384,6 +386,8 @@ export class MemberDrawerComponent {
   close(): void {
     this.state.closeMember();
     this.tab.set('profil');
+    // Clear ?open= query param
+    this.router.navigate([], { queryParams: { open: null }, queryParamsHandling: 'merge' });
   }
 
   edit(): void {

@@ -2,31 +2,34 @@ import { Component, inject, input } from '@angular/core';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { IconComponent } from '../icon/icon.component';
 import { AvatarComponent } from '../avatar/avatar.component';
+import { TPipe } from '../../pipes/t.pipe';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [IconComponent, AvatarComponent],
+  imports: [IconComponent, AvatarComponent, TPipe],
   template: `
     <header style="height:var(--topbar-h);display:flex;align-items:center;gap:12px;padding:0 16px 0 10px;border-bottom:1px solid var(--border);background:var(--bg-elev);position:sticky;top:0;z-index:20">
-      <!-- Sidebar toggle -->
-      <button (click)="state.collapsed.update(v => !v)"
-        [title]="state.collapsed() ? 'Seitenleiste ausklappen' : 'Seitenleiste einklappen'"
+      <!-- Sidebar toggle (desktop collapse OR mobile open) -->
+      <button (click)="onToggleSidebar()"
+        [title]="(state.collapsed() ? 'topbar.toggleSidebarOpen' : 'topbar.toggleSidebarClose') | t"
         class="btn btn-ghost btn-icon"
         style="flex-shrink:0">
         <app-icon [name]="state.collapsed() ? 'menu' : 'menuCollapse'" [size]="16" />
       </button>
 
-      <div style="font-size:14px;font-weight:600">{{ title() }}</div>
+      <div style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ title() }}</div>
       <div style="flex:1"></div>
 
-      <!-- Search -->
+      <!-- Search - full on desktop, icon-only on mobile -->
       <button (click)="state.cmdOpen.set(true)"
+        class="topbar-search"
+        data-tour="topbar-search"
         style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px 0 8px;border-radius:6px;background:var(--bg-subtle);border:1px solid var(--border);color:var(--text-muted);font-size:12px;min-width:260px">
         <app-icon name="search" [size]="14" />
-        <span>Suchen …</span>
-        <div style="flex:1"></div>
-        <span class="kbd">⌘</span><span class="kbd">K</span>
+        <span class="hide-sm-down">{{ 'topbar.search' | t }}</span>
+        <div style="flex:1" class="hide-sm-down"></div>
+        <span class="kbd hide-sm-down">⌘</span><span class="kbd hide-sm-down">K</span>
       </button>
 
       <!-- Notifications -->
@@ -54,6 +57,15 @@ import { AvatarComponent } from '../avatar/avatar.component';
 export class TopbarComponent {
   state = inject(AppStateService);
   title = input<string>('');
+
+  onToggleSidebar(): void {
+    // On mobile (<=900px): toggle mobile drawer instead of desktop collapse
+    if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+      this.state.mobileSidebarOpen.update(v => !v);
+    } else {
+      this.state.collapsed.update(v => !v);
+    }
+  }
 
   hover(e: Event, bg: string): void {
     (e.currentTarget as HTMLElement).style.background = bg;

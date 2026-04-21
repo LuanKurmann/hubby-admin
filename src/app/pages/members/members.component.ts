@@ -1,5 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AppStateService } from '../../core/services/app-state.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -35,7 +36,7 @@ import { MemberDrawerComponent } from './member-drawer.component';
           <button class="btn" (click)="exportCsv()">
             <app-icon name="download" [size]="13" /> Exportieren
           </button>
-          <button class="btn btn-primary" (click)="state.setPage('invites')">
+          <button class="btn btn-primary" (click)="router.navigate(['/invites'])">
             <app-icon name="key" [size]="13" /> Einladungscodes
           </button>
         </div>
@@ -118,7 +119,7 @@ import { MemberDrawerComponent } from './member-drawer.component';
             </thead>
             <tbody>
               @for (m of paginated(); track m.id) {
-                <tr (click)="state.openMember(m)" style="cursor:pointer">
+                <tr (click)="openMember(m)" style="cursor:pointer">
                   <td (click)="$event.stopPropagation()">
                     <input type="checkbox" [checked]="selectedIds().has(m.id)" (change)="toggleOne(m.id)">
                   </td>
@@ -176,7 +177,7 @@ import { MemberDrawerComponent } from './member-drawer.component';
               emoji="👥"
               title="Keine Mitglieder gefunden"
               body="Passe die Filter an oder erstelle einen Einladungscode.">
-              <button class="btn btn-primary" (click)="state.setPage('invites')">
+              <button class="btn btn-primary" (click)="router.navigate(['/invites'])">
                 <app-icon name="key" [size]="13" /> Einladungscode erstellen
               </button>
             </app-empty-state>
@@ -211,6 +212,25 @@ import { MemberDrawerComponent } from './member-drawer.component';
 })
 export class MembersComponent {
   state = inject(AppStateService);
+  router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
+
+  constructor() {
+    // Sync ?open=<id> query param → drawer state
+    this.activatedRoute.queryParamMap.subscribe(qp => {
+      const id = qp.get('open');
+      if (id) {
+        const m = this.data.members.find(x => x.id === id);
+        if (m) this.state.openMember(m);
+      } else if (this.state.memberOpen()) {
+        this.state.closeMember();
+      }
+    });
+  }
+
+  openMember(m: Member): void {
+    this.router.navigate([], { queryParams: { open: m.id }, queryParamsHandling: 'merge' });
+  }
   data = inject(MockDataService);
   toast = inject(ToastService);
 

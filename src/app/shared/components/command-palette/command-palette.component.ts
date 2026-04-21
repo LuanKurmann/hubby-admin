@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed, effect, viewChild, ElementRef, HostListener } from '@angular/core';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { MockDataService } from '../../../core/services/mock-data.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -72,6 +73,7 @@ export class CommandPaletteComponent {
   state = inject(AppStateService);
   data = inject(MockDataService);
   toast = inject(ToastService);
+  router = inject(Router);
   datePipe = new FormatDatePipe();
 
   q = signal<string>('');
@@ -88,23 +90,23 @@ export class CommandPaletteComponent {
 
   results = computed<Result[]>(() => {
     const query = this.q().toLowerCase().trim();
-    const pages: Result[] = NAV.map(n => ({ kind: 'page', icon: n.icon, label: n.label, sub: 'Seite', action: () => this.state.setPage(n.id) }));
+    const pages: Result[] = NAV.map(n => ({ kind: 'page', icon: n.icon, label: n.label, sub: 'Seite', action: () => this.router.navigate(['/', n.id]) }));
     const members: Result[] = this.data.members.slice(0, 30).map(m => ({
       kind: 'member', icon: 'user',
       label: `${m.firstName} ${m.lastName}`,
       sub: m.email,
-      action: () => { this.state.setPage('members'); this.toast.show('Mitglied geöffnet: ' + m.firstName + ' ' + m.lastName); },
+      action: () => this.router.navigate(['/members'], { queryParams: { open: m.id } }),
     }));
     const events: Result[] = this.data.events.map(e => ({
       kind: 'event', icon: 'calendar',
       label: e.title,
       sub: this.datePipe.transform(e.start, 'datetime'),
-      action: () => this.state.setPage('events'),
+      action: () => this.router.navigate(['/events'], { queryParams: { open: e.id } }),
     }));
     const actions: Result[] = [
-      { kind: 'action', icon: 'key', label: 'Einladungscode erstellen', sub: 'Aktion', action: () => this.state.setPage('invites') },
-      { kind: 'action', icon: 'plus', label: 'Neues Event erstellen', sub: 'Aktion', action: () => this.state.setPage('events') },
-      { kind: 'action', icon: 'plus', label: 'News publizieren', sub: 'Aktion', action: () => this.state.setPage('news') },
+      { kind: 'action', icon: 'key', label: 'Einladungscode erstellen', sub: 'Aktion', action: () => this.router.navigate(['/invites']) },
+      { kind: 'action', icon: 'plus', label: 'Neues Event erstellen', sub: 'Aktion', action: () => this.router.navigate(['/events']) },
+      { kind: 'action', icon: 'plus', label: 'News publizieren', sub: 'Aktion', action: () => this.router.navigate(['/news']) },
     ];
     const all = [...actions, ...pages, ...members, ...events];
     if (!query) return all.slice(0, 8);

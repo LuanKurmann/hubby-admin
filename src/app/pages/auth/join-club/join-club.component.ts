@@ -1,6 +1,8 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../../core/services/app-state.service';
+import { OnboardingService } from '../../../core/services/onboarding.service';
 import { MockDataService } from '../../../core/services/mock-data.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -120,6 +122,8 @@ export class JoinClubComponent {
   state = inject(AppStateService);
   data = inject(MockDataService);
   toast = inject(ToastService);
+  router = inject(Router);
+  onboarding = inject(OnboardingService);
 
   code = signal<string>('');
 
@@ -174,5 +178,8 @@ export class JoinClubComponent {
       body: `Willkommen! Du bist jetzt als ${this.roleNames()} registriert.`,
     });
     this.state.authenticated.set(true);
+    this.router.navigateByUrl('/dashboard').then(() => {
+      setTimeout(() => this.onboarding.start(this.state.club().name), 600);
+    });
   }
 }

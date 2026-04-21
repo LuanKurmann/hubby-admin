@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -168,6 +169,7 @@ import { HubbyLogoComponent } from '../hubby-logo.component';
 export class LoginComponent {
   state = inject(AppStateService);
   toast = inject(ToastService);
+  router = inject(Router);
 
   email = 'admin@fc-seedorf.ch';
   pw = 'demo12345';
@@ -180,6 +182,7 @@ export class LoginComponent {
       this.busy.set(false);
       this.state.authenticated.set(true);
       this.toast.show({ kind: 'success', title: 'Willkommen zurück', body: 'Du bist bei FC Seedorf angemeldet.' });
+      this.router.navigateByUrl('/dashboard');
     }, 700);
   }
 

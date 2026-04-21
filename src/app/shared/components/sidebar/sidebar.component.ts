@@ -1,31 +1,34 @@
 import { Component, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AppStateService } from '../../../core/services/app-state.service';
 import { IconComponent } from '../icon/icon.component';
+import { TPipe } from '../../pipes/t.pipe';
 
 interface NavItem {
   id: string;
-  label: string;
   icon: string;
 }
 
 const NAV: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'home' },
-  { id: 'members', label: 'Mitglieder', icon: 'users' },
-  { id: 'invites', label: 'Einladungscodes', icon: 'key' },
-  { id: 'teams', label: 'Teams', icon: 'ball' },
-  { id: 'events', label: 'Trainings & Matches', icon: 'calendar' },
-  { id: 'news', label: 'News & Berichte', icon: 'news' },
-  { id: 'dues', label: 'Beiträge', icon: 'money' },
-  { id: 'roles', label: 'Rollen & Rechte', icon: 'shield' },
-  { id: 'settings', label: 'Einstellungen', icon: 'settings' },
+  { id: 'dashboard', icon: 'home' },
+  { id: 'members', icon: 'users' },
+  { id: 'invites', icon: 'key' },
+  { id: 'teams', icon: 'ball' },
+  { id: 'events', icon: 'calendar' },
+  { id: 'news', icon: 'news' },
+  { id: 'dues', icon: 'money' },
+  { id: 'roles', icon: 'shield' },
+  { id: 'settings', icon: 'settings' },
 ];
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, RouterLink, RouterLinkActive, TPipe],
   template: `
-    <aside [style.width]="state.collapsed() ? 'var(--sidebar-w-collapsed)' : 'var(--sidebar-w)'"
+    <aside class="sidebar"
+      [class.mobile-open]="state.mobileSidebarOpen()"
+      [style.width]="state.collapsed() ? 'var(--sidebar-w-collapsed)' : 'var(--sidebar-w)'"
       style="background:var(--bg-elev);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;transition:width .18s;flex-shrink:0;overflow:hidden">
 
       <!-- Club header -->
@@ -54,19 +57,24 @@ const NAV: NavItem[] = [
       <!-- Navigation -->
       <nav style="flex:1;padding:8px;overflow-y:auto">
         @for (item of navItems; track item.id) {
-          <button (click)="state.setPage(item.id)"
-            [title]="state.collapsed() ? item.label : ''"
-            [style.background]="state.page() === item.id ? 'var(--primary-subtle)' : 'transparent'"
-            [style.color]="state.page() === item.id ? 'var(--primary)' : 'var(--text-secondary)'"
-            [style.font-weight]="state.page() === item.id ? '600' : '500'"
+          <a
+            [routerLink]="['/', item.id]"
+            routerLinkActive
+            #rla="routerLinkActive"
+            (click)="state.mobileSidebarOpen.set(false)"
+            [title]="state.collapsed() ? ('nav.' + item.id | t) : ''"
+            [attr.data-tour]="'nav-' + item.id"
+            [style.background]="rla.isActive ? 'var(--primary-subtle)' : 'transparent'"
+            [style.color]="rla.isActive ? 'var(--primary)' : 'var(--text-secondary)'"
+            [style.font-weight]="rla.isActive ? '600' : '500'"
             [style.padding]="state.collapsed() ? '0' : '0 10px'"
             [style.justify-content]="state.collapsed() ? 'center' : 'flex-start'"
-            style="display:flex;align-items:center;gap:10px;width:100%;height:34px;border-radius:6px;font-size:13px;margin-bottom:2px;transition:background .1s"
-            (mouseenter)="onHoverEnter($event, item.id)"
-            (mouseleave)="onHoverLeave($event, item.id)">
+            style="display:flex;align-items:center;gap:10px;width:100%;height:34px;border-radius:6px;font-size:13px;margin-bottom:2px;transition:background .1s;text-decoration:none"
+            (mouseenter)="onHoverEnter($event, rla.isActive)"
+            (mouseleave)="onHoverLeave($event, rla.isActive)">
             <app-icon [name]="item.icon" [size]="16" />
-            @if (!state.collapsed()) { <span>{{ item.label }}</span> }
-          </button>
+            @if (!state.collapsed()) { <span>{{ 'nav.' + item.id | t }}</span> }
+          </a>
         }
       </nav>
     </aside>
@@ -76,12 +84,12 @@ export class SidebarComponent {
   state = inject(AppStateService);
   navItems = NAV;
 
-  onHoverEnter(e: MouseEvent, id: string): void {
-    if (this.state.page() !== id) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)';
+  onHoverEnter(e: MouseEvent, isActive: boolean): void {
+    if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)';
   }
 
-  onHoverLeave(e: MouseEvent, id: string): void {
-    if (this.state.page() !== id) (e.currentTarget as HTMLElement).style.background = 'transparent';
+  onHoverLeave(e: MouseEvent, isActive: boolean): void {
+    if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent';
   }
 
   hover(e: Event, bg: string): void {
