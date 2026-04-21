@@ -14,7 +14,7 @@ type StatusFilter = 'all' | 'active' | 'expired' | 'used' | 'revoked';
 
 interface NewCodeForm {
   prefix: string;
-  roleId: string;
+  roleIds: string[];
   teamId: string;
   maxUses: string;
   expiresInDays: string;
@@ -99,35 +99,37 @@ function randomCode(prefix: string): string {
             </button>
           </app-empty-state>
         } @else {
-          <div style="overflow-y:auto;flex:1">
-            <table class="tbl">
+          <div style="overflow:auto;flex:1">
+            <table class="tbl" style="min-width:900px">
               <thead>
                 <tr>
-                  <th>Code</th>
-                  <th>Rolle</th>
-                  <th>Team</th>
-                  <th>Nutzungen</th>
-                  <th>Gültig bis</th>
-                  <th>Erstellt</th>
-                  <th>Status</th>
+                  <th style="min-width:240px">Code</th>
+                  <th style="min-width:130px">Rolle</th>
+                  <th style="width:80px">Team</th>
+                  <th style="width:110px">Nutzungen</th>
+                  <th style="width:110px">Gültig bis</th>
+                  <th style="width:160px">Erstellt</th>
+                  <th style="width:120px">Status</th>
                   <th style="width:130px"></th>
                 </tr>
               </thead>
               <tbody>
                 @for (c of filtered(); track c.id) {
                   <tr>
-                    <td>
-                      <div style="display:flex;align-items:center;gap:8px">
-                        <code style="font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;padding:3px 8px;border-radius:4px;background:var(--bg-subtle);letter-spacing:0.04em;font-weight:600">
-                          {{ c.code }}
-                        </code>
-                      </div>
+                    <td style="padding-top:10px;padding-bottom:10px">
+                      <code style="display:inline-block;font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;padding:4px 10px;border-radius:6px;background:var(--bg-subtle);letter-spacing:0.06em;font-weight:600;color:var(--text);white-space:nowrap">
+                        {{ c.code }}
+                      </code>
                       @if (c.note) {
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:3px">{{ c.note }}</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" [title]="c.note">{{ c.note }}</div>
                       }
                     </td>
                     <td>
-                      <span class="chip">{{ roleName(c.roleId) }}</span>
+                      <div style="display:flex;gap:4px;flex-wrap:wrap">
+                        @for (rid of c.roleIds; track rid) {
+                          <span class="chip">{{ roleName(rid) }}</span>
+                        }
+                      </div>
                     </td>
                     <td>
                       @if (c.teamId; as tid) {
@@ -156,9 +158,9 @@ function randomCode(prefix: string): string {
                         <span style="color:var(--text-muted)">unbefristet</span>
                       }
                     </td>
-                    <td style="font-size:12px;color:var(--text-muted)">
-                      {{ c.createdAt | formatDate }}<br>
-                      <span style="font-size:11px">von {{ c.createdBy }}</span>
+                    <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">
+                      {{ c.createdAt | formatDate }}
+                      <div style="font-size:11px;margin-top:2px">von {{ c.createdBy }}</div>
                     </td>
                     <td>
                       @switch (statusOf(c)) {
@@ -202,24 +204,36 @@ function randomCode(prefix: string): string {
             Der Code wird automatisch erzeugt: <code style="font-family:ui-monospace;background:var(--bg-subtle);padding:1px 6px;border-radius:3px">{{ previewCode() }}</code>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <label class="label">Rolle beim Beitritt</label>
-            <select class="select" [(ngModel)]="newForm.roleId" name="roleId">
-              @for (r of data.roles; track r.id) {
-                <option [value]="r.id">{{ r.name }}</option>
-              }
-            </select>
+        <div>
+          <label class="label">Rollen beim Beitritt (Mehrfachauswahl)</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg-subtle)">
+            @for (r of data.roles; track r.id) {
+              <button type="button" (click)="toggleNewRole(r.id)"
+                [style.background]="newForm.roleIds.includes(r.id) ? 'var(--primary)' : 'var(--bg-elev)'"
+                [style.color]="newForm.roleIds.includes(r.id) ? '#fff' : 'var(--text-secondary)'"
+                [style.border-color]="newForm.roleIds.includes(r.id) ? 'var(--primary)' : 'var(--border)'"
+                style="padding:4px 10px;border-radius:999px;border:1px solid;font-size:12px;display:inline-flex;align-items:center;gap:4px;cursor:pointer">
+                @if (newForm.roleIds.includes(r.id)) {
+                  <app-icon name="check" [size]="10" />
+                }
+                {{ r.name }}
+              </button>
+            }
           </div>
-          <div>
-            <label class="label">Team (optional)</label>
-            <select class="select" [(ngModel)]="newForm.teamId" name="teamId">
-              <option value="">Kein Team</option>
-              @for (t of data.teams; track t.id) {
-                <option [value]="t.id">{{ t.name }}</option>
-              }
-            </select>
-          </div>
+          @if (newForm.roleIds.length === 0) {
+            <div style="font-size:11px;color:var(--danger);margin-top:4px">Mindestens eine Rolle auswählen.</div>
+          } @else {
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">{{ newForm.roleIds.length }} {{ newForm.roleIds.length === 1 ? 'Rolle ausgewählt' : 'Rollen ausgewählt' }}</div>
+          }
+        </div>
+        <div>
+          <label class="label">Team (optional)</label>
+          <select class="select" [(ngModel)]="newForm.teamId" name="teamId">
+            <option value="">Kein Team</option>
+            @for (t of data.teams; track t.id) {
+              <option [value]="t.id">{{ t.name }}</option>
+            }
+          </select>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
@@ -276,8 +290,8 @@ function randomCode(prefix: string): string {
           </div>
           <div style="padding:10px 12px;background:var(--bg-subtle);border-radius:8px;font-size:12px;color:var(--text-muted);line-height:1.55">
             Neue Mitglieder verwenden den Code beim Registrieren oder Beitreten auf <strong>{{ host() }}</strong>.
-            Nach erfolgreicher Verifizierung werden sie automatisch der Rolle
-            "<strong>{{ roleName(c.roleId) }}</strong>"
+            Nach erfolgreicher Verifizierung werden sie automatisch den Rollen
+            <strong>{{ roleNames(c.roleIds) }}</strong>
             @if (c.teamId) { und dem Team "<strong>{{ teamById(c.teamId)?.name }}</strong>"}
             zugeordnet.
           </div>
@@ -318,12 +332,18 @@ export class InvitesComponent {
 
   newForm: NewCodeForm = {
     prefix: 'FCS',
-    roleId: 'r5',
+    roleIds: ['r5'],
     teamId: '',
     maxUses: '',
     expiresInDays: '30',
     note: '',
   };
+
+  toggleNewRole(id: string): void {
+    const i = this.newForm.roleIds.indexOf(id);
+    if (i >= 0) this.newForm.roleIds.splice(i, 1);
+    else this.newForm.roleIds.push(id);
+  }
 
   previewCode = signal<string>(randomCode('FCS'));
 
@@ -366,6 +386,10 @@ export class InvitesComponent {
     return this.data.getRole(id)?.name ?? '–';
   }
 
+  roleNames(ids: string[]): string {
+    return ids.map(id => '"' + this.roleName(id) + '"').join(', ');
+  }
+
   teamById(id: string | null) {
     return id ? this.data.getTeam(id) : undefined;
   }
@@ -386,6 +410,10 @@ export class InvitesComponent {
       this.toast.show({ kind: 'error', body: 'Bitte Präfix angeben.' });
       return;
     }
+    if (this.newForm.roleIds.length === 0) {
+      this.toast.show({ kind: 'error', body: 'Mindestens eine Rolle auswählen.' });
+      return;
+    }
     const maxUsesNum = this.newForm.maxUses.trim() ? parseInt(this.newForm.maxUses, 10) : null;
     const expiryDays = this.newForm.expiresInDays.trim() ? parseInt(this.newForm.expiresInDays, 10) : null;
     const expiresAt = expiryDays ? new Date(Date.now() + expiryDays * 24 * 3600 * 1000) : null;
@@ -393,7 +421,7 @@ export class InvitesComponent {
     const code: InviteCode = {
       id: 'inv-' + Date.now(),
       code: this.previewCode(),
-      roleId: this.newForm.roleId,
+      roleIds: [...this.newForm.roleIds],
       teamId: this.newForm.teamId || null,
       maxUses: maxUsesNum,
       usedCount: 0,

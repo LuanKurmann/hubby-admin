@@ -34,7 +34,7 @@ export interface Member {
   email: string;
   phone: string;
   teams: string[];
-  roleId: string;
+  roleIds: string[];
   paid: boolean;
   dueAmount: number;
   birthDate: string;
@@ -95,7 +95,7 @@ export interface Tweaks {
 export interface InviteCode {
   id: string;
   code: string;
-  roleId: string;
+  roleIds: string[];
   teamId: string | null;
   maxUses: number | null;
   usedCount: number;

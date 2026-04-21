@@ -49,9 +49,9 @@ type TabId = 'profil' | 'beitraege' | 'aktivitaet';
               Mitglied seit {{ m.joined }}
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
-              @if (roleName(); as r) {
+              @for (r of memberRoles(); track r.id) {
                 <span class="chip">
-                  <app-icon name="shield" [size]="10" /> {{ r }}
+                  <app-icon name="shield" [size]="10" /> {{ r.name }}
                 </span>
               }
               @for (t of memberTeams(); track t.id) {
@@ -150,17 +150,25 @@ type TabId = 'profil' | 'beitraege' | 'aktivitaet';
 
             <!-- Rollen & Rechte -->
             <section class="card" style="padding:14px">
-              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px">
-                Rollen & Rechte
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px;display:flex;justify-content:space-between">
+                <span>Rollen & Rechte</span>
+                <span style="font-weight:500;text-transform:none;letter-spacing:0">{{ memberRoles().length }} {{ memberRoles().length === 1 ? 'Rolle' : 'Rollen' }}</span>
               </div>
-              <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-subtle);border-radius:6px">
-                <div style="width:32px;height:32px;border-radius:8px;background:var(--primary-subtle);color:var(--primary);display:flex;align-items:center;justify-content:center">
-                  <app-icon name="shield" [size]="14" />
-                </div>
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:500">{{ roleName() }}</div>
-                  <div style="font-size:11px;color:var(--text-muted)">{{ roleDescription() }}</div>
-                </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                @for (r of memberRoles(); track r.id) {
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg-subtle);border-radius:6px">
+                    <div style="width:32px;height:32px;border-radius:8px;background:var(--primary-subtle);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                      <app-icon name="shield" [size]="14" />
+                    </div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:13px;font-weight:500">{{ r.name }}</div>
+                      <div style="font-size:11px;color:var(--text-muted)">{{ r.description }}</div>
+                    </div>
+                  </div>
+                }
+                @if (memberRoles().length === 0) {
+                  <div style="padding:12px;text-align:center;font-size:12px;color:var(--text-muted)">Keine Rollen zugewiesen</div>
+                }
               </div>
             </section>
 
@@ -318,15 +326,17 @@ export class MemberDrawerComponent {
       .filter((t): t is Team => !!t);
   });
 
-  roleName = computed<string>(() => {
+  memberRoles = computed(() => {
     const m = this.member();
-    return m ? (this.data.getRole(m.roleId)?.name ?? '') : '';
+    if (!m) return [];
+    return m.roleIds
+      .map(id => this.data.getRole(id))
+      .filter((r): r is NonNullable<typeof r> => !!r);
   });
 
-  roleDescription = computed<string>(() => {
-    const m = this.member();
-    return m ? (this.data.getRole(m.roleId)?.description ?? '') : '';
-  });
+  roleName = computed<string>(() => this.memberRoles().map(r => r.name).join(', '));
+
+  roleDescription = computed<string>(() => this.memberRoles().map(r => r.description).join(' · '));
 
   attendanceColor = computed(() => {
     const a = this.member()?.attendance ?? 0;

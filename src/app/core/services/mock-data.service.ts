@@ -59,7 +59,16 @@ export class MockDataService {
         const t = pick(this.teams);
         if (!memberTeams.includes(t.id)) memberTeams.push(t.id);
       }
-      const roleIdx = i < 1 ? 0 : i < 2 ? 1 : i < 3 ? 2 : i < 11 ? 3 : rnd() < 0.15 ? 5 : 4;
+      const primaryIdx = i < 1 ? 0 : i < 2 ? 1 : i < 3 ? 2 : i < 11 ? 3 : rnd() < 0.15 ? 5 : 4;
+      const memberRoleIds: string[] = [this.roles[primaryIdx].id];
+      if (rnd() < 0.18) {
+        const extra = this.roles[Math.floor(rnd() * this.roles.length)].id;
+        if (!memberRoleIds.includes(extra)) memberRoleIds.push(extra);
+      }
+      if (rnd() < 0.06) {
+        const extra2 = this.roles[Math.floor(rnd() * this.roles.length)].id;
+        if (!memberRoleIds.includes(extra2)) memberRoleIds.push(extra2);
+      }
       const paid = rnd() < 0.74;
       const daysSince = Math.floor(rnd() * 60);
       result.push({
@@ -69,7 +78,7 @@ export class MockDataService {
         email: `${first.toLowerCase()}.${last.toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue')}@example.ch`,
         phone: `+41 7${Math.floor(rnd()*9)} ${String(Math.floor(rnd()*900)+100)} ${String(Math.floor(rnd()*90)+10)} ${String(Math.floor(rnd()*90)+10)}`,
         teams: memberTeams,
-        roleId: this.roles[roleIdx].id,
+        roleIds: memberRoleIds,
         paid,
         dueAmount: paid ? 0 : [150, 200, 250, 400][Math.floor(rnd()*4)],
         birthDate: `${String(Math.floor(rnd()*28)+1).padStart(2,'0')}.${String(Math.floor(rnd()*12)+1).padStart(2,'0')}.${1960 + Math.floor(rnd()*55)}`,
@@ -88,6 +97,10 @@ export class MockDataService {
       t.coachId = trainerMember.id;
       t.coach = `${trainerMember.firstName} ${trainerMember.lastName}`;
       t.memberCount = result.filter(m => m.teams.includes(t.id)).length;
+    });
+    // Recompute role user counts based on actual roleIds
+    this.roles.forEach(r => {
+      r.users = result.filter(m => m.roleIds.includes(r.id)).length;
     });
     return result;
   })();
@@ -154,7 +167,7 @@ export class MockDataService {
     {
       id: 'inv1',
       code: 'FCS-2026-A4XK',
-      roleId: 'r5',
+      roleIds: ['r5'],
       teamId: null,
       maxUses: 20,
       usedCount: 12,
@@ -167,7 +180,7 @@ export class MockDataService {
     {
       id: 'inv2',
       code: 'FCS-U15-BJM9',
-      roleId: 'r5',
+      roleIds: ['r5'],
       teamId: 't5',
       maxUses: 5,
       usedCount: 3,
@@ -180,7 +193,7 @@ export class MockDataService {
     {
       id: 'inv3',
       code: 'FCS-COACH-XY72',
-      roleId: 'r4',
+      roleIds: ['r4', 'r3'],
       teamId: null,
       maxUses: 3,
       usedCount: 0,
@@ -193,7 +206,7 @@ export class MockDataService {
     {
       id: 'inv4',
       code: 'FCS-VERSAMM-2F',
-      roleId: 'r6',
+      roleIds: ['r6'],
       teamId: null,
       maxUses: null,
       usedCount: 8,
@@ -206,7 +219,7 @@ export class MockDataService {
     {
       id: 'inv5',
       code: 'FCS-ALT-9X3M',
-      roleId: 'r5',
+      roleIds: ['r5'],
       teamId: null,
       maxUses: 10,
       usedCount: 10,

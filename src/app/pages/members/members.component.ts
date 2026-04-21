@@ -145,8 +145,12 @@ import { MemberDrawerComponent } from './member-drawer.component';
                       }
                     </div>
                   </td>
-                  <td style="font-size:12px;color:var(--text-secondary)">
-                    {{ roleName(m.roleId) }}
+                  <td>
+                    <div style="display:flex;gap:4px;flex-wrap:wrap">
+                      @for (rid of m.roleIds; track rid) {
+                        <span class="chip">{{ roleName(rid) }}</span>
+                      }
+                    </div>
                   </td>
                   <td>
                     @if (m.paid) {
@@ -241,7 +245,7 @@ export class MembersComponent {
         if (!hay.includes(query)) return false;
       }
       if (tf && !m.teams.includes(tf)) return false;
-      if (rf && m.roleId !== rf) return false;
+      if (rf && !m.roleIds.includes(rf)) return false;
       if (pf === 'paid' && !m.paid) return false;
       if (pf === 'open' && m.paid) return false;
       return true;

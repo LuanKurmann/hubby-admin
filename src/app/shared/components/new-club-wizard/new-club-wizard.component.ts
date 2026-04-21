@@ -717,19 +717,21 @@ export class NewClubWizardComponent {
   currentStepId = computed(() => this.currentStep().id);
   progressPct = computed(() => Math.round(((this.stepIdx() + 1) / this.steps.length) * 100));
 
-  initials = computed(() => {
+  initials(): string {
     const parts = this.form.name.split(/\s+/).filter(Boolean);
     const i = parts.map(p => p[0]).slice(0, 3).join('').toUpperCase();
     return i || '?';
-  });
+  }
 
-  canAdvance = computed<boolean>(() => {
+  canAdvance(): boolean {
     const id = this.currentStepId();
     if (id === 'basics') return this.form.name.trim().length > 0;
     return true;
-  });
+  }
 
-  canFinish = computed<boolean>(() => this.form.name.trim().length > 0);
+  canFinish(): boolean {
+    return this.form.name.trim().length > 0;
+  }
 
   canJumpTo(idx: number): boolean {
     if (idx <= this.stepIdx()) return true;

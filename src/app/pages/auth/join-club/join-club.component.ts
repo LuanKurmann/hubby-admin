@@ -38,7 +38,7 @@ import { HubbyLogoComponent } from '../hubby-logo.component';
           @if (validationState() === 'valid' && matchedCode(); as m) {
             <div class="hint ok">
               <app-icon name="checkCircle" [size]="12" />
-              Gültig — Rolle <strong>{{ roleName() }}</strong>
+              Gültig — {{ m.roleIds.length > 1 ? 'Rollen' : 'Rolle' }} <strong>{{ roleNames() }}</strong>
               @if (m.teamId) { im Team <strong>{{ teamName() }}</strong> }
             </div>
           } @else if (validationState() === 'expired') {
@@ -144,9 +144,10 @@ export class JoinClubComponent {
     return 'valid';
   });
 
-  roleName = computed(() => {
+  roleNames = computed(() => {
     const m = this.matchedCode();
-    return m ? (this.data.getRole(m.roleId)?.name ?? '') : '';
+    if (!m) return '';
+    return m.roleIds.map(id => this.data.getRole(id)?.name).filter(Boolean).join(', ');
   });
 
   teamName = computed(() => {
@@ -170,7 +171,7 @@ export class JoinClubComponent {
     this.toast.show({
       kind: 'success',
       title: 'Beigetreten',
-      body: `Willkommen! Du bist jetzt als ${this.roleName()} registriert.`,
+      body: `Willkommen! Du bist jetzt als ${this.roleNames()} registriert.`,
     });
     this.state.authenticated.set(true);
   }
