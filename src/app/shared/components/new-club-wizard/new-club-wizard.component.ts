@@ -5,10 +5,12 @@ import { AppStateService } from '../../../core/services/app-state.service';
 import { OnboardingService } from '../../../core/services/onboarding.service';
 import { MockDataService } from '../../../core/services/mock-data.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { I18nService, Locale } from '../../../core/i18n/i18n.service';
 import { IconComponent } from '../icon/icon.component';
 import { HubbyLogoComponent } from '../../../pages/auth/hubby-logo.component';
+import { InviteCode } from '../../../core/models';
 
-type StepId = 'basics' | 'location' | 'branding' | 'teams' | 'board' | 'defaults' | 'finish';
+type StepId = 'basics' | 'location' | 'branding' | 'teams' | 'invites' | 'defaults' | 'finish';
 
 interface StepDef {
   id: StepId;
@@ -25,12 +27,13 @@ interface TeamDraft {
   color: string;
 }
 
-interface BoardDraft {
+interface InviteDraft {
   id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
+  code: string;
+  label: string;
+  roleIds: string[];
+  maxUses: number | null;
+  expiresInDays: number | null;
 }
 
 const STEPS: StepDef[] = [
@@ -38,7 +41,7 @@ const STEPS: StepDef[] = [
   { id: 'location', label: 'Standort', icon: 'mapPin', hint: 'Adresse und Kontaktdaten' },
   { id: 'branding', label: 'Branding', icon: 'sparkles', hint: 'Farbe und Logo' },
   { id: 'teams', label: 'Teams', icon: 'ball', hint: 'Erste Mannschaften anlegen' },
-  { id: 'board', label: 'Vorstand', icon: 'users', hint: 'Vorstandsmitglieder einladen' },
+  { id: 'invites', label: 'Einladungscodes', icon: 'key', hint: 'Wie Mitglieder beitreten' },
   { id: 'defaults', label: 'Standards', icon: 'settings', hint: 'Beiträge und Sprache' },
   { id: 'finish', label: 'Fertig', icon: 'checkCircle', hint: 'Alles bereit' },
 ];
@@ -53,13 +56,36 @@ const TEAM_PRESETS = [
   { name: 'Damen FF1', category: 'Damen', short: 'FF1', color: '#DB2777' },
 ];
 
-const BOARD_ROLE_PRESETS = ['Präsident', 'Vize-Präsident', 'Kassier', 'Aktuar', 'Trainer', 'Materialwart', 'Beisitzer'];
+interface InvitePreset {
+  key: string;
+  label: string;
+  short: string;
+  roleIds: string[];
+  maxUses: number | null;
+  expiresInDays: number | null;
+}
+
+const INVITE_PRESETS: InvitePreset[] = [
+  { key: 'president', label: 'Präsident', short: 'PRES', roleIds: ['r1'], maxUses: 1, expiresInDays: 30 },
+  { key: 'treasurer', label: 'Kassier', short: 'KASS', roleIds: ['r2'], maxUses: 1, expiresInDays: 30 },
+  { key: 'secretary', label: 'Aktuar', short: 'AKTU', roleIds: ['r3'], maxUses: 1, expiresInDays: 30 },
+  { key: 'coach', label: 'Trainer', short: 'TRAI', roleIds: ['r4'], maxUses: 5, expiresInDays: 90 },
+  { key: 'member', label: 'Aktivmitglied', short: 'MIT', roleIds: ['r5'], maxUses: 50, expiresInDays: 90 },
+  { key: 'passive', label: 'Passivmitglied', short: 'PASS', roleIds: ['r6'], maxUses: null, expiresInDays: 365 },
+];
 
 const COLOR_PRESETS = ['#DC2626', '#EA580C', '#F59E0B', '#059669', '#0891B2', '#2563EB', '#7C3AED', '#DB2777', '#0F172A'];
 
 const SPORTS = ['Fussball', 'Turnen', 'Unihockey', 'Handball', 'Volleyball', 'Basketball', 'Eishockey', 'Leichtathletik', 'Tennis', 'Schwimmen', 'Andere'];
 
 const CANTONS = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE','NW','OW','SG','SH','SO','SZ','TG','TI','UR','VD','VS','ZG','ZH'];
+
+function randomCodeSuffix(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 4; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return s;
+}
 
 @Component({
   selector: 'app-new-club-wizard',
@@ -266,41 +292,75 @@ const CANTONS = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE
                 </div>
               }
 
-              @case ('board') {
-                <h2 class="wz-h2">Wer bildet den Vorstand?</h2>
+              @case ('invites') {
+                <h2 class="wz-h2">Wie treten Mitglieder bei?</h2>
                 <p class="wz-p">
-                  Vorstandsmitglieder erhalten eine E-Mail-Einladung zum Beitritt.
-                  <button type="button" class="wz-link" (click)="skipBoard()">Überspringen</button>
+                  Bei Hubby treten Mitglieder über <strong>Einladungscodes</strong> bei — keine direkten E-Mail-Einladungen nötig.
+                  Wähle unten Presets oder erstelle eigene Codes. Du kannst sie anschliessend per E-Mail, WhatsApp oder Aushang teilen.
+                  <button type="button" class="wz-link" (click)="skipInvites()">Überspringen</button>
                 </p>
 
-                @if (board().length === 0) {
+                <div class="wz-presets" style="margin-top:0;margin-bottom:16px">
+                  <div class="wz-presets-label">Schnellstart — Preset wählen:</div>
+                  <div class="wz-presets-chips">
+                    @for (p of invitePresets; track p.key) {
+                      @if (!hasInvitePreset(p.key)) {
+                        <button type="button" class="wz-chip" (click)="addPresetInvite(p)">
+                          <app-icon name="plus" [size]="10" /> {{ p.label }}
+                          <span style="opacity:0.6;margin-left:4px">
+                            ({{ p.maxUses ?? '∞' }}×)
+                          </span>
+                        </button>
+                      }
+                    }
+                    <button type="button" class="wz-chip wz-chip-custom" (click)="addCustomInvite()">
+                      <app-icon name="plus" [size]="10" /> Eigener Code
+                    </button>
+                  </div>
+                </div>
+
+                @if (invites().length === 0) {
                   <div class="wz-empty">
-                    <app-icon name="userPlus" [size]="32" />
-                    <div>Noch keine Vorstandsmitglieder — füge welche hinzu oder überspringe diesen Schritt.</div>
+                    <app-icon name="key" [size]="32" />
+                    <div>Noch keine Einladungscodes — wähle oben ein Preset oder überspringe diesen Schritt.</div>
                   </div>
                 }
 
-                @if (board().length > 0) {
-                  <div class="wz-board-list">
-                    @for (b of board(); track b.id) {
-                      <div class="wz-board-row">
-                        <input class="input" placeholder="Vorname" [(ngModel)]="b.firstName" [name]="'bfn' + b.id" style="width:140px">
-                        <input class="input" placeholder="Nachname" [(ngModel)]="b.lastName" [name]="'bln' + b.id" style="width:160px">
-                        <input class="input" placeholder="E-Mail" [(ngModel)]="b.email" [name]="'bem' + b.id" type="email">
-                        <select class="select" [(ngModel)]="b.role" [name]="'br' + b.id" style="width:160px">
-                          @for (r of boardRoles; track r) { <option>{{ r }}</option> }
+                @if (invites().length > 0) {
+                  <div class="wz-invite-list">
+                    @for (inv of invites(); track inv.id) {
+                      <div class="wz-invite-row">
+                        <code class="wz-invite-code">{{ inv.code }}</code>
+                        <input class="input" [(ngModel)]="inv.label" [name]="'il' + inv.id" placeholder="Beschriftung" style="flex:1;min-width:140px">
+                        <select class="select" [(ngModel)]="inv.maxUses" [name]="'iu' + inv.id" style="width:110px">
+                          <option [ngValue]="1">1× Nutzung</option>
+                          <option [ngValue]="5">5× Nutzungen</option>
+                          <option [ngValue]="20">20×</option>
+                          <option [ngValue]="50">50×</option>
+                          <option [ngValue]="null">Unbegrenzt</option>
                         </select>
-                        <button type="button" class="btn btn-ghost btn-icon" (click)="removeBoard(b.id)">
+                        <div class="wz-invite-roles" [title]="inviteRoleNames(inv)">
+                          <app-icon name="shield" [size]="12" />
+                          <span>{{ inv.roleIds.length }} {{ inv.roleIds.length === 1 ? 'Rolle' : 'Rollen' }}</span>
+                        </div>
+                        <button type="button" class="btn btn-ghost btn-icon" (click)="regenerateCode(inv)" title="Neu generieren">
+                          <app-icon name="sparkles" [size]="13" />
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-icon" (click)="removeInvite(inv.id)" title="Entfernen">
                           <app-icon name="trash" [size]="14" />
                         </button>
                       </div>
                     }
                   </div>
-                }
 
-                <button type="button" class="btn" (click)="addBoard()" style="margin-top:12px">
-                  <app-icon name="userPlus" [size]="13" /> Vorstandsmitglied hinzufügen
-                </button>
+                  <div style="margin-top:12px;padding:10px 12px;background:var(--bg-subtle);border-radius:8px;font-size:12px;color:var(--text-muted);line-height:1.55;display:flex;align-items:flex-start;gap:8px">
+                    <app-icon name="info" [size]="14" style="flex-shrink:0;margin-top:1px" />
+                    <span>
+                      Diese Codes werden nach Erstellung des Vereins automatisch aktiv und stehen dir unter
+                      <strong>Einladungscodes</strong> zum Teilen zur Verfügung.
+                    </span>
+                  </div>
+                }
               }
 
               @case ('defaults') {
@@ -317,11 +377,14 @@ const CANTONS = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE
                   </div>
                   <div class="wz-field">
                     <label class="label">Sprache</label>
-                    <select class="select" [(ngModel)]="form.language" name="language">
+                    <select class="select" [ngModel]="form.language" name="language" (ngModelChange)="onLanguageChange($event)">
                       <option value="DE">Deutsch</option>
                       <option value="FR">Français</option>
                       <option value="IT">Italiano</option>
                     </select>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+                      Die UI wechselt sofort. Alle Vereinsmitglieder können ihre eigene Sprache im Profil setzen.
+                    </div>
                   </div>
                   <div class="wz-field">
                     <label class="label">Vereinsgrösse</label>
@@ -359,8 +422,8 @@ const CANTONS = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE
                       <div class="wz-review-stat-val">{{ teams().length }}</div>
                     </div>
                     <div class="wz-review-stat">
-                      <div class="wz-review-stat-label">Vorstand</div>
-                      <div class="wz-review-stat-val">{{ board().length }}</div>
+                      <div class="wz-review-stat-label">Einladungscodes</div>
+                      <div class="wz-review-stat-val">{{ invites().length }}</div>
                     </div>
                     <div class="wz-review-stat">
                       <div class="wz-review-stat-label">Jahresbeitrag</div>
@@ -374,7 +437,7 @@ const CANTONS = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE
 
                   @if (teams().length > 0) {
                     <div class="wz-review-section">
-                      <div class="wz-review-section-title">Teams</div>
+                      <div class="wz-review-section-title">Teams ({{ teams().length }})</div>
                       <div class="wz-review-chips">
                         @for (t of teams(); track t.id) {
                           <span class="wz-review-chip" [style.background]="t.color + '22'" [style.color]="t.color">
@@ -385,15 +448,15 @@ const CANTONS = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE
                     </div>
                   }
 
-                  @if (board().length > 0) {
+                  @if (invites().length > 0) {
                     <div class="wz-review-section">
-                      <div class="wz-review-section-title">Vorstandsmitglieder ({{ board().length }} Einladungen)</div>
+                      <div class="wz-review-section-title">Einladungscodes ({{ invites().length }})</div>
                       <div class="wz-review-list">
-                        @for (b of board(); track b.id) {
+                        @for (inv of invites(); track inv.id) {
                           <div class="wz-review-board">
-                            <span>{{ b.firstName }} {{ b.lastName }}</span>
-                            <span class="chip">{{ b.role }}</span>
-                            <span class="wz-mail">{{ b.email }}</span>
+                            <code style="font-family:ui-monospace,monospace;font-size:12px;padding:3px 8px;border-radius:4px;background:var(--bg-subtle);letter-spacing:0.04em;font-weight:600">{{ inv.code }}</code>
+                            <span class="chip">{{ inv.label }}</span>
+                            <span class="wz-mail">{{ inv.maxUses === null ? 'unbegrenzt' : inv.maxUses + '× Nutzungen' }}</span>
                           </div>
                         }
                       </div>
@@ -418,7 +481,7 @@ const CANTONS = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE
                   <app-icon name="check" [size]="14" /> Verein erstellen
                 </button>
               } @else {
-                @if (currentStepId() === 'teams' || currentStepId() === 'board') {
+                @if (currentStepId() === 'teams' || currentStepId() === 'invites') {
                   <button class="btn btn-ghost btn-lg" (click)="next()">Später erledigen</button>
                 }
                 <button class="btn btn-primary btn-lg" [disabled]="!canAdvance()" (click)="next()">
@@ -621,6 +684,33 @@ const CANTONS = ['AG','AI','AR','BE','BL','BS','FR','GE','GL','GR','JU','LU','NE
     }
     .wz-board-row .input { flex: 1; min-width: 120px; }
 
+    .wz-invite-list { display: flex; flex-direction: column; gap: 6px; }
+    .wz-invite-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg-elev);
+      flex-wrap: wrap;
+    }
+    .wz-invite-code {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--bg-subtle);
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .wz-invite-roles {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 8px; border-radius: 999px;
+      background: var(--bg-subtle);
+      font-size: 11px; color: var(--text-muted);
+      white-space: nowrap;
+    }
+
     .wz-review {
       padding: 24px;
       background: var(--bg-elev);
@@ -671,6 +761,7 @@ export class NewClubWizardComponent {
   toast = inject(ToastService);
   router = inject(Router);
   onboarding = inject(OnboardingService);
+  i18n = inject(I18nService);
 
   inAuthFlow = input<boolean>(false);
   closed = output<void>();
@@ -680,7 +771,7 @@ export class NewClubWizardComponent {
   cantons = CANTONS;
   colors = COLOR_PRESETS;
   teamPresets = TEAM_PRESETS;
-  boardRoles = BOARD_ROLE_PRESETS;
+  invitePresets = INVITE_PRESETS;
 
   stepIdx = signal<number>(0);
 
@@ -712,10 +803,14 @@ export class NewClubWizardComponent {
   private _teamId = 1;
   teams = signal<TeamDraft[]>([]);
 
-  private _boardId = 1;
-  board = signal<BoardDraft[]>([
-    { id: 0, firstName: '', lastName: '', email: '', role: 'Präsident' },
-  ]);
+  private _inviteId = 1;
+  invites = signal<InviteDraft[]>([]);
+
+  private codePrefix(): string {
+    const parts = this.form.name.split(/\s+/).filter(Boolean);
+    const p = parts.map(w => w[0]).slice(0, 3).join('').toUpperCase();
+    return p || 'NEW';
+  }
 
   currentStep = computed(() => this.steps[this.stepIdx()]);
   currentStepId = computed(() => this.currentStep().id);
@@ -755,7 +850,7 @@ export class NewClubWizardComponent {
   prev(): void { if (this.stepIdx() > 0) this.stepIdx.update(i => i - 1); }
 
   skipTeams(): void { this.next(); }
-  skipBoard(): void { this.next(); }
+  skipInvites(): void { this.next(); }
 
   hasTeamName(name: string): boolean {
     return this.teams().some(t => t.name === name);
@@ -774,47 +869,129 @@ export class NewClubWizardComponent {
     this.teams.update(list => list.filter(t => t.id !== id));
   }
 
-  addBoard(): void {
-    this.board.update(list => [
+  // --- Invites (presets + custom) ---
+  hasInvitePreset(key: string): boolean {
+    return this.invites().some(i => i.label === this.presetLabel(key));
+  }
+
+  private presetLabel(key: string): string {
+    return INVITE_PRESETS.find(p => p.key === key)?.label ?? key;
+  }
+
+  addPresetInvite(p: InvitePreset): void {
+    this.invites.update(list => [
       ...list,
-      { id: this._boardId++, firstName: '', lastName: '', email: '', role: 'Trainer' },
+      {
+        id: this._inviteId++,
+        code: `${this.codePrefix()}-${p.short}-${randomCodeSuffix()}`,
+        label: p.label,
+        roleIds: [...p.roleIds],
+        maxUses: p.maxUses,
+        expiresInDays: p.expiresInDays,
+      },
     ]);
   }
-  removeBoard(id: number): void {
-    this.board.update(list => list.filter(b => b.id !== id));
+
+  addCustomInvite(): void {
+    this.invites.update(list => [
+      ...list,
+      {
+        id: this._inviteId++,
+        code: `${this.codePrefix()}-CUSTOM-${randomCodeSuffix()}`,
+        label: 'Eigener Code',
+        roleIds: ['r5'],
+        maxUses: 20,
+        expiresInDays: 30,
+      },
+    ]);
+  }
+
+  regenerateCode(inv: InviteDraft): void {
+    const parts = inv.code.split('-');
+    const middle = parts.length > 2 ? parts[1] : 'CODE';
+    inv.code = `${this.codePrefix()}-${middle}-${randomCodeSuffix()}`;
+  }
+
+  removeInvite(id: number): void {
+    this.invites.update(list => list.filter(i => i.id !== id));
+  }
+
+  inviteRoleNames(inv: InviteDraft): string {
+    return inv.roleIds
+      .map(id => this.data.getRole(id)?.name)
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  // --- Language (live-switches UI) ---
+  onLanguageChange(v: 'DE' | 'FR' | 'IT'): void {
+    this.form.language = v;
+    this.i18n.setLocale(v.toLowerCase() as Locale);
   }
 
   finish(): void {
     if (!this.canFinish()) return;
-    const shortName = this.form.name.split(/\s+/).map(w => w[0]).slice(0, 3).join('').toUpperCase() || 'NEW';
+
+    // 1) Create the club and switch to it
     const newClub = {
       id: 'c-' + Date.now(),
       name: this.form.name,
-      logo: shortName,
+      logo: this.codePrefix(),
       color: this.form.color,
-      members: this.board().filter(b => b.email).length,
+      members: 0,
       role: 'Präsident',
     };
-    this.data.clubs.push(newClub);
+    this.data.addClub(newClub);
     this.state.club.set(newClub);
     this.state.setTweak('primaryColor', this.form.color);
 
-    const invited = this.board().filter(b => b.email).length;
+    // 2) Persist language (wizard already called setLocale live; make sure it sticks)
+    this.i18n.setLocale(this.form.language.toLowerCase() as Locale);
+
+    // 3) Register all invite code drafts in the mock data service
+    const created: InviteCode[] = [];
+    for (const d of this.invites()) {
+      const expiresAt = d.expiresInDays
+        ? new Date(Date.now() + d.expiresInDays * 24 * 3600 * 1000)
+        : null;
+      const code: InviteCode = {
+        id: 'inv-' + Date.now() + '-' + d.id,
+        code: d.code,
+        roleIds: [...d.roleIds],
+        teamId: null,
+        maxUses: d.maxUses,
+        usedCount: 0,
+        expiresAt,
+        note: `Aus Setup-Wizard: ${d.label}`,
+        createdAt: new Date(),
+        createdBy: this.state.user().name,
+        status: 'active',
+      };
+      this.data.addInviteCode(code);
+      created.push(code);
+    }
+
+    // 4) Toast summary
+    const parts: string[] = [];
+    if (this.teams().length > 0) parts.push(`${this.teams().length} Teams`);
+    if (created.length > 0) parts.push(`${created.length} Einladungscodes`);
     this.toast.show({
       kind: 'success',
       title: `Verein "${this.form.name}" erstellt`,
-      body: invited > 0
-        ? `${invited} Einladungen werden versendet.`
-        : 'Lade jetzt die ersten Mitglieder ein.',
+      body: parts.length > 0
+        ? `${parts.join(' · ')} angelegt. Bereit loszulegen!`
+        : 'Bereit loszulegen! Lade jetzt die ersten Mitglieder ein.',
     });
 
+    // 5) Auth flow: log in
     if (this.inAuthFlow()) {
       this.state.authenticated.set(true);
     }
+
+    // 6) Close wizard, navigate, start onboarding tour
     this.state.newClubWizardOpen.set(false);
     this.closed.emit();
     this.router.navigateByUrl('/dashboard').then(() => {
-      // Start onboarding tour ~600ms after nav, so DOM is ready
       setTimeout(() => this.onboarding.start(this.form.name || 'deinem neuen Verein'), 600);
     });
   }

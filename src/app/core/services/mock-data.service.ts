@@ -21,10 +21,14 @@ function dateOffset(days: number, h = 19, m = 30): Date {
 
 @Injectable({ providedIn: 'root' })
 export class MockDataService {
-  readonly clubs: Club[] = [
+  readonly clubs = signal<Club[]>([
     { id: 'c1', name: 'FC Seedorf', logo: 'FCS', color: '#DC2626', members: 168, role: 'Präsident' },
     { id: 'c2', name: 'STV Altdorf', logo: 'STV', color: '#2563EB', members: 92, role: 'Trainer' },
-  ];
+  ]);
+
+  addClub(c: Club): void {
+    this.clubs.update(list => [...list, c]);
+  }
 
   readonly teams: Team[] = [
     { id: 't1', name: '1. Mannschaft', color: '#DC2626', category: 'Aktive', coach: 'Roger Federer', short: '1.M', memberCount: 0, season: { games: 18, w: 11, d: 4, l: 3 } },

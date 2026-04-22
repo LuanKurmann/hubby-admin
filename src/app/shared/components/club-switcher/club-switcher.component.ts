@@ -13,7 +13,7 @@ import { Club } from '../../../core/models';
   template: `
     <app-modal [open]="state.clubSwitcherOpen()" title="Verein wechseln" [width]="480" (closed)="close()">
       <div style="display:flex;flex-direction:column;gap:6px">
-        @for (c of data.clubs; track c.id) {
+        @for (c of data.clubs(); track c.id) {
           <button (click)="select(c)"
             [style.border]="'1px solid ' + (c.id === state.club().id ? 'var(--primary)' : 'var(--border)')"
             [style.background]="c.id === state.club().id ? 'var(--primary-subtle)' : 'var(--bg-elev)'"
